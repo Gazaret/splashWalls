@@ -1,0 +1,3 @@
+rootProject.name = 'splashWalls'
+
+include ':app'
