@@ -1,8 +1,20 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, AppRegistry, ActivityIndicator, Dimensions, PanResponder } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  AppRegistry,
+  ActivityIndicator,
+  Dimensions,
+  PanResponder,
+  Platform,
+  Alert,
+  CameraRoll,
+} from 'react-native';
 import Swiper from 'react-native-swiper';
 import NetworkImage from 'react-native-image-progress';
 import ProgressCircle from 'react-native-progress/Circle';
+import RNFetchBlob from 'react-native-fetch-blob';
 import { RandService } from './RandService/RandService';
 import { UtilsService } from './UtilsService/UtilsService';
 
@@ -24,19 +36,19 @@ export default class App extends Component {
       y: 0,
       timestamp: 0,
     };
+    this.currentWallIndex = 0;
   }
 
   fetchWalls() {
-    const url = 'http://unsplash.it/list';
+    const url = 'https://unsplash.it/list';
 
     fetch(url)
       .then(response => response.json())
       .then(json => {
-        console.info('Gotcha wallpapers');
         const randomIds = RandService.uniqueRandomNumbers(NUM_WALLPAPERS, 0, json.length);
 
         let walls = [];
- 
+
         for(let ids of randomIds) {
           walls.push(json[ids]);
         }
@@ -46,16 +58,16 @@ export default class App extends Component {
           walls
         });
       })
-      .catch(error => console.error('fetchWalls error', error.message || error));
+      .catch(error => console.error('fetchWalls error:', error.message || error));
   }
 
   componentWillMount() {
     this.imagePanResponder = PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => true, 
-      onStartShouldSetPanResponderCapture: (evt, gestureState) => true, 
-      onMoveShouldSetPanResponder: (evt, gestureState) => true, 
-      onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+      onStartShouldSetPanResponderCapture: (e, gestureState) => true,
       onPanResponderGrant: this.handlePanResponderGrant.bind(this),
+      onPanResponderRelease: () => {},
+      onPanResponderTerminate: () => {},
+      onShouldBlockNativeResponder: () => false,
     });
   }
 
@@ -69,6 +81,7 @@ export default class App extends Component {
 
     if (UtilsService.isDoubleTap(currentTimestamp, this.prevTouchInfo, x0, y0)) {
       console.info('Double tap');
+      this.saveToGallery();
     }
 
     this.prevTouchInfo = {
@@ -76,6 +89,47 @@ export default class App extends Component {
       y: y0,
       timestamp: currentTimestamp,
     };
+  }
+
+  async saveToGallery() {
+    const {walls} = this.state;
+    const currentWall = walls[this.currentWallIndex];
+    const currentWallUrl = `https://unsplash.it/${currentWall.width}/${currentWall.height}?image=${currentWall.id}`;
+
+    try {
+      let path = currentWallUrl;
+
+      // On android need download image
+      if (Platform.OS === 'android') {
+        path = await this.downloadWall(currentWallUrl);
+      }
+
+      await CameraRoll.saveToCameraRoll(path);
+
+      Alert.alert(
+        'Сохранено',
+        'Изображение успешно добавленно в галлерею',
+        [
+          {text: 'Отлично', onPress: () => console.log('OK Pressed!')}
+        ]
+      );
+    } catch(error) {
+      console.error('saveToGallery error:', error.message || error);
+    };
+  }
+
+  downloadWall(url) {
+    return RNFetchBlob
+      .config({
+        fileCache: true,
+        appendExt : 'jpg',
+      })
+      .fetch('GET', url)
+      .then(response => `file://${response.path()}`)
+  }
+
+  onMomentumScrollEnd(e, state, index) {
+    this.currentWallIndex = state.index;
   }
 
   render() {
@@ -91,7 +145,7 @@ export default class App extends Component {
   renderLoadingMessage() {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator 
+        <ActivityIndicator
           animating={true}
           color={'#fff'}
           size={'small'}
@@ -109,11 +163,12 @@ export default class App extends Component {
         dot={<View style={styles.swiperDot} />}
         activeDot={<View style={styles.swiperDotActive} />}
         loop={false}
+        onMomentumScrollEnd={this.onMomentumScrollEnd.bind(this)}
       >
         {walls.map((wallpaper, index) => {
           return (
             <View key={index} style={styles.wallpaperContainer}>
-              <NetworkImage 
+              <NetworkImage
                 source={{ uri: `https://unsplash.it/${wallpaper.width}/${wallpaper.height}?image=${wallpaper.id}` }}
                 indicator={ProgressCircle}
                 indicatorProps={{

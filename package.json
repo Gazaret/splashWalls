@@ -5,13 +5,15 @@
   "devDependencies": {
     "babel-preset-react-native-stage-0": "^1.0.1",
     "jest-expo": "~20.0.0",
+    "react-devtools": "^2.5.2",
     "react-test-renderer": "16.0.0"
   },
   "scripts": {
     "start": "react-native start",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
-    "test": "node node_modules/jest/bin/jest.js --watch"
+    "test": "node node_modules/jest/bin/jest.js --watch",
+    "react-devtools": "react-devtools"
   },
   "jest": {
     "preset": "jest-expo"
@@ -19,6 +21,7 @@
   "dependencies": {
     "react": "16.0.0",
     "react-native": "^0.48.4",
+    "react-native-fetch-blob": "^0.10.8",
     "react-native-image-progress": "^1.0.1",
     "react-native-progress": "^3.4.0",
     "react-native-swiper": "^1.5.12"
