@@ -15,8 +15,9 @@ import Swiper from 'react-native-swiper';
 import NetworkImage from 'react-native-image-progress';
 import ProgressCircle from 'react-native-progress/Circle';
 import RNFetchBlob from 'react-native-fetch-blob';
-import { RandService } from './RandService/RandService';
-import { UtilsService } from './UtilsService/UtilsService';
+import { ProgressHUD } from './components/ProgressHUD/ProgressHUD';
+import { RandService } from './services/RandService/RandService';
+import { UtilsService } from './services/UtilsService/UtilsService';
 
 const NUM_WALLPAPERS = 5;
 
@@ -37,6 +38,7 @@ export default class App extends Component {
       timestamp: 0,
     };
     this.currentWallIndex = 0;
+    this.isHudVisible = false;
   }
 
   fetchWalls() {
@@ -80,7 +82,6 @@ export default class App extends Component {
     const {x0, y0} = gestureState;
 
     if (UtilsService.isDoubleTap(currentTimestamp, this.prevTouchInfo, x0, y0)) {
-      console.info('Double tap');
       this.saveToGallery();
     }
 
@@ -96,6 +97,8 @@ export default class App extends Component {
     const currentWall = walls[this.currentWallIndex];
     const currentWallUrl = `https://unsplash.it/${currentWall.width}/${currentWall.height}?image=${currentWall.id}`;
 
+    this.setState({isHudVisible: true});
+
     try {
       let path = currentWallUrl;
 
@@ -105,6 +108,8 @@ export default class App extends Component {
       }
 
       await CameraRoll.saveToCameraRoll(path);
+
+      this.setState({isHudVisible: false});
 
       Alert.alert(
         'Сохранено',
@@ -157,35 +162,40 @@ export default class App extends Component {
   }
 
   renderResults() {
-    const {walls, isLoading} = this.state;
+    const {walls, isLoading, isHudVisible} = this.state;
+
     return (
-      <Swiper
-        dot={<View style={styles.swiperDot} />}
-        activeDot={<View style={styles.swiperDotActive} />}
-        loop={false}
-        onMomentumScrollEnd={this.onMomentumScrollEnd.bind(this)}
-      >
-        {walls.map((wallpaper, index) => {
-          return (
-            <View key={index} style={styles.wallpaperContainer}>
-              <NetworkImage
-                source={{ uri: `https://unsplash.it/${wallpaper.width}/${wallpaper.height}?image=${wallpaper.id}` }}
-                indicator={ProgressCircle}
-                indicatorProps={{
-                  color: '#fff',
-                  size: 60,
-                  thickness: 7,
-                }}
-                style={styles.wallpaperImage}
-                {...this.imagePanResponder.panHandlers}
-              >
-                <Text style={styles.label}>Фотограф:</Text>
-                <Text style={styles.labelAuthor}>{wallpaper.author}</Text>
-              </NetworkImage>
-            </View>
-          );
-        })}
-      </Swiper>
+      <View style={styles.loadingContainer}>
+        <Swiper
+          dot={<View style={styles.swiperDot} />}
+          activeDot={<View style={styles.swiperDotActive} />}
+          loop={false}
+          onMomentumScrollEnd={this.onMomentumScrollEnd.bind(this)}
+          index={this.currentWallIndex}
+        >
+          {walls.map((wallpaper, index) => {
+            return (
+              <View key={index} style={styles.wallpaperContainer}>
+                <NetworkImage
+                  source={{ uri: `https://unsplash.it/${wallpaper.width}/${wallpaper.height}?image=${wallpaper.id}` }}
+                  indicator={ProgressCircle}
+                  indicatorProps={{
+                    color: '#fff',
+                    size: 60,
+                    thickness: 7,
+                  }}
+                  style={styles.wallpaperImage}
+                  {...this.imagePanResponder.panHandlers}
+                >
+                  <Text style={styles.label}>Фотограф:</Text>
+                  <Text style={styles.labelAuthor}>{wallpaper.author}</Text>
+                </NetworkImage>
+              </View>
+            );
+          })}
+        </Swiper>
+        <ProgressHUD width={width} height={height} isVisible={isHudVisible} />
+      </View>
     );
   }
 }
