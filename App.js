@@ -15,7 +15,8 @@ import Swiper from 'react-native-swiper';
 import NetworkImage from 'react-native-image-progress';
 import ProgressCircle from 'react-native-progress/Circle';
 import RNFetchBlob from 'react-native-fetch-blob';
-import { ProgressHUD } from './components/ProgressHUD/ProgressHUD';
+import RNShakeEvent from 'react-native-shake-event';
+import ProgressHUD from './components/ProgressHUD/ProgressHUD';
 import { RandService } from './services/RandService/RandService';
 import { UtilsService } from './services/UtilsService/UtilsService';
 
@@ -30,6 +31,7 @@ export default class App extends Component {
     this.state = {
       walls: [],
       isLoading: true,
+      isHudVisible: false,
     };
     this.imagePanResponder = {};
     this.prevTouchInfo = {
@@ -38,13 +40,22 @@ export default class App extends Component {
       timestamp: 0,
     };
     this.currentWallIndex = 0;
-    this.isHudVisible = false;
+  }
+
+  initialize() {
+    this.setState({
+      walls: [],
+      isLoading: true,
+      isHudVisible: false,
+    })
+
+    this.currentWallIndex = 0;
   }
 
   fetchWalls() {
     const url = 'https://unsplash.it/list';
 
-    fetch(url)
+    return fetch(url)
       .then(response => response.json())
       .then(json => {
         const randomIds = RandService.uniqueRandomNumbers(NUM_WALLPAPERS, 0, json.length);
@@ -59,6 +70,8 @@ export default class App extends Component {
           isLoading: false,
           walls
         });
+
+        return walls;
       })
       .catch(error => console.error('fetchWalls error:', error.message || error));
   }
@@ -71,10 +84,19 @@ export default class App extends Component {
       onPanResponderTerminate: () => {},
       onShouldBlockNativeResponder: () => false,
     });
+
+    RNShakeEvent.addEventListener('shake', () => {
+      this.initialize();
+      this.fetchWalls();
+    });
   }
 
   componentDidMount() {
     this.fetchWalls();
+  }
+
+  componentWillUnmount() {
+    RNShakeEvent.removeEventListener('shake');
   }
 
   handlePanResponderGrant(e, gestureState) {
@@ -149,7 +171,7 @@ export default class App extends Component {
 
   renderLoadingMessage() {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.centerContainer}>
         <ActivityIndicator
           animating={true}
           color={'#fff'}
@@ -165,7 +187,7 @@ export default class App extends Component {
     const {walls, isLoading, isHudVisible} = this.state;
 
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.centerContainer}>
         <Swiper
           dot={<View style={styles.swiperDot} />}
           activeDot={<View style={styles.swiperDotActive} />}
@@ -201,7 +223,7 @@ export default class App extends Component {
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  centerContainer: {
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#000',

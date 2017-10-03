@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
-export class ProgressHUD extends Component {
+export default class ProgressHUD extends Component {
   constructor(props) {
     super(props);
   }
