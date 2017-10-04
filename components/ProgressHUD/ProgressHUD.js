@@ -1,8 +1,16 @@
+// @flow
+
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
+type Props = {
+  width: number,
+  height: number,
+  isVisible: boolean,
+}
+
 export default class ProgressHUD extends Component {
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
   }
 

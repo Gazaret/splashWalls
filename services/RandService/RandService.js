@@ -1,6 +1,8 @@
+// @flow
+
 export class RandService {
-  static uniqueRandomNumbers(count, lowerLimit, upperLimit) {
-    let uniqueNumbers = [];
+  static uniqueRandomNumbers(count: number, lowerLimit: number, upperLimit: number): number[] {
+    let uniqueNumbers: number[] = [];
 
     while (uniqueNumbers.length !== count) {
       const currentNumber = RandService.randomNumberInRange(lowerLimit, upperLimit);
@@ -14,7 +16,7 @@ export class RandService {
     return uniqueNumbers;
   }
 
-  static randomNumberInRange(lowerLimit, upperLimit) {
+  static randomNumberInRange(lowerLimit: number, upperLimit: number): number {
     return Math.floor(Math.random() * (1 + upperLimit - lowerLimit)) + lowerLimit;
   }
 }

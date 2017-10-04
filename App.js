@@ -1,3 +1,5 @@
+// @flow
+
 import React, { Component } from 'react';
 import {
   StyleSheet,
@@ -20,12 +22,40 @@ import ProgressHUD from './components/ProgressHUD/ProgressHUD';
 import { RandService } from './services/RandService/RandService';
 import { UtilsService } from './services/UtilsService/UtilsService';
 
+type State = {
+  walls: Wallpaper[],
+  isLoading: boolean,
+  isHudVisible: boolean,
+};
+
+export type TouchInfo = {
+  x: number,
+  y: number,
+  timestamp: number,
+};
+
+type Wallpaper = {
+  format: string,
+  width: number,
+  height: number,
+  filename: string,
+  id: number,
+  author: string,
+  author_url: string,
+  post_ulr: string,
+};
+
 const NUM_WALLPAPERS = 5;
 
 const {width, height} = Dimensions.get('window');
 
 export default class App extends Component {
-  constructor(props) {
+  imagePanResponder: any;
+  prevTouchInfo: TouchInfo;
+  currentWallIndex: number;
+  state: State;
+
+  constructor(props: Object) {
     super(props);
 
     this.state = {
@@ -42,7 +72,7 @@ export default class App extends Component {
     this.currentWallIndex = 0;
   }
 
-  initialize() {
+  initialize(): void {
     this.setState({
       walls: [],
       isLoading: true,
@@ -52,15 +82,15 @@ export default class App extends Component {
     this.currentWallIndex = 0;
   }
 
-  fetchWalls() {
-    const url = 'https://unsplash.it/list';
+  fetchWalls(): Promise<Wallpaper[]> {
+    const url: string = 'https://unsplash.it/list';
 
     return fetch(url)
       .then(response => response.json())
-      .then(json => {
-        const randomIds = RandService.uniqueRandomNumbers(NUM_WALLPAPERS, 0, json.length);
+      .then((json: Wallpaper[]) => {
+        const randomIds: number[] = RandService.uniqueRandomNumbers(NUM_WALLPAPERS, 0, json.length);
 
-        let walls = [];
+        let walls: Wallpaper[] = [];
 
         for(let ids of randomIds) {
           walls.push(json[ids]);
@@ -76,9 +106,9 @@ export default class App extends Component {
       .catch(error => console.error('fetchWalls error:', error.message || error));
   }
 
-  componentWillMount() {
+  componentWillMount(): void {
     this.imagePanResponder = PanResponder.create({
-      onStartShouldSetPanResponderCapture: (e, gestureState) => true,
+      onStartShouldSetPanResponderCapture: (e: SyntheticTouchEvent, gestureState: any) => true,
       onPanResponderGrant: this.handlePanResponderGrant.bind(this),
       onPanResponderRelease: () => {},
       onPanResponderTerminate: () => {},
@@ -91,15 +121,15 @@ export default class App extends Component {
     });
   }
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.fetchWalls();
   }
 
   componentWillUnmount() {
-    RNShakeEvent.removeEventListener('shake');
+    RNShakeEvent.removeEventListener('shake', () => {});
   }
 
-  handlePanResponderGrant(e, gestureState) {
+  handlePanResponderGrant(e: SyntheticTouchEvent, gestureState: any): void {
     const currentTimestamp = Date.now();
     const {x0, y0} = gestureState;
 
@@ -114,7 +144,7 @@ export default class App extends Component {
     };
   }
 
-  async saveToGallery() {
+  async saveToGallery(): Promise<void> {
     const {walls} = this.state;
     const currentWall = walls[this.currentWallIndex];
     const currentWallUrl = `https://unsplash.it/${currentWall.width}/${currentWall.height}?image=${currentWall.id}`;
@@ -122,7 +152,7 @@ export default class App extends Component {
     this.setState({isHudVisible: true});
 
     try {
-      let path = currentWallUrl;
+      let path: string = currentWallUrl;
 
       // On android need download image
       if (Platform.OS === 'android') {
@@ -145,7 +175,7 @@ export default class App extends Component {
     };
   }
 
-  downloadWall(url) {
+  downloadWall(url: string): Promise<string> {
     return RNFetchBlob
       .config({
         fileCache: true,
@@ -155,7 +185,7 @@ export default class App extends Component {
       .then(response => `file://${response.path()}`)
   }
 
-  onMomentumScrollEnd(e, state, index) {
+  onMomentumScrollEnd(e: any, state: any): void {
     this.currentWallIndex = state.index;
   }
 
