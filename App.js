@@ -12,6 +12,7 @@ import {
   Platform,
   Alert,
   CameraRoll,
+  StatusBar,
 } from 'react-native';
 import Swiper from 'react-native-swiper';
 import NetworkImage from 'react-native-image-progress';
@@ -107,6 +108,8 @@ export default class App extends Component {
   }
 
   componentWillMount(): void {
+    StatusBar.setHidden(true);
+
     this.imagePanResponder = PanResponder.create({
       onStartShouldSetPanResponderCapture: (e: SyntheticTouchEvent, gestureState: any) => true,
       onPanResponderGrant: this.handlePanResponderGrant.bind(this),
